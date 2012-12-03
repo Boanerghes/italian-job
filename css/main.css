@@ -1,3 +1,5 @@
+/* General 
+-------------------------------------- */
 body{
 	font-family: Verdana;
 	font-size: 12px;	
@@ -30,13 +32,12 @@ p{
 	margin-bottom: 10px;
 }
 
+
+
 /* twitter stream 
 -------------------------------------- */
 .twitStream{
-	font-family: verdana;
-	font-size: 11px;
-}
-.twitStream a{
+	margin-top: 60px;
 	font-family: verdana;
 	font-size: 11px;
 }
@@ -55,6 +56,11 @@ p{
 .tweet p.text{
 	margin: 0;
 	padding: 0;
+}
+.tweet-separator{
+height:1px;
+background:#717171;
+border-bottom:1px solid #313030;
 }
 
 
@@ -172,4 +178,3 @@ p{
     border: 0;
     padding: 0;
 }    
-

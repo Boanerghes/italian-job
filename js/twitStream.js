@@ -1,20 +1,17 @@
-String.prototype.linkify=function(){
-    return this.replace(/[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&;\?\/.=]+/g,function(m){
-        return m.link(m);
-    });
-};
-
 String.prototype.linkuser=function(){
-    return this.replace(/[@]+[A-Za-z0-9-_]+/g,function(u){
-        return u.link("http://twitter.com/"+u.replace("@",""));
-    }); 
+    return this.replace(/[@]+[A-Za-z0-9-_]+/g,"");
 };
 
-String.prototype.linktag=function(){
-    return this.replace(/[]+[A-Za-z0-9-_]+/,function(t){
-        return t;
-    });
+String.prototype.linkify=function(){
+    return this.replace(/[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&;\?\/.=]+/g,"");
 };
+
+String.prototype.rt=function(){
+    return this.replace("RT: ","").replace("RT :","").replace("RT : ","");
+};
+
+
+
 
 function fetch_tweets(elem){
     elem=$(elem);
@@ -24,7 +21,7 @@ function fetch_tweets(elem){
     $.getJSON(url,function(json){
         elem.html('');
         $(json.results).each(function(){
-			var tweet='<div class="tweet"><div class="tweet-left"><a target="_blank" href="http://twitter.com/'+this.from_user+'"><img width="48" height="48" alt="'+this.from_user+' on Twitter" src="'+this.profile_image_url+'" /></a></div><div class="tweet-right"><p class="text">'+this.text.linkify().linkuser().linktag().replace(/<a/g,'<a target="_blank"')+'<br />'+'</p></div><br style="clear: both;" /></div>';            
+			var tweet='<div class="tweet-separator"></div><div class="tweet"><div class="tweet-left"><a target="_blank" href="http://twitter.com/'+this.from_user+'"><img width="48" height="48" alt="'+this.from_user+' on Twitter" src="'+this.profile_image_url+'" /></a></div><div class="tweet-right"><p class="text">'+this.text.linkify().linkuser().rt().replace(/<a/g,'<a target="_blank"')+'<br />'+'</p></div><br style="clear: both;" /></div>';            
 			elem.append(tweet);
         });
     });
