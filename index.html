@@ -35,7 +35,11 @@
         	});
         	$('form').submit(function (event) {
             	event.preventDefault();
-            	fetch_tweets('#tweets');
+            	init( { keyword : $('input[type="text"]').val(), 
+            			num : 100, 
+            			elem : $('#tweets') 
+            		  }
+            		);
         	});
         </script>
         
