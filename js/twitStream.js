@@ -11,7 +11,8 @@ function TweetCollection () {
 
 // Fetches tweets based on the provided parameters
 TweetCollection.prototype.fetch = function (keyword, num, lang, callback)
-{ 	var url= "http://search.twitter.com/search.json?q="+keyword+"&rpp="+num+"&callback=?"+"&lang=" + lang;
+{ 	
+	var url= "http://search.twitter.com/search.json?q="+keyword+"&rpp="+num+"&callback=?"+"&lang=" + lang;
 	$.getJSON(url, function(json){
 		tweets = json;
 		callback(json);
