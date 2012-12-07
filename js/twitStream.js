@@ -18,6 +18,8 @@ TweetCollection.prototype.fetch = function (keyword, num, lang, callback)
 	});
 }
 
+
+
 // Display the tweets stored in the object in the 'elem' DOM position.
 // TODO what does it happen if no tweets have been retrieved?!
 TweetCollection.prototype.displayTweets = function(elem) {
@@ -32,21 +34,32 @@ TweetCollection.displayTweets = function(elem){
 		
 		elem.html('');
 	    $(json.results).each(function(){
-	    	var tweet='<div class="tweet-separator"></div><div class="tweet"><div class="tweet-left"><a target="_blank" href="http://twitter.com/'+this.from_user+'"><img width="48" height="48" alt="'+this.from_user+' on Twitter" src="'+this.profile_image_url+'" /></a></div><div class="tweet-right"><p class="text">'+this.text.linkify().linkuser().rt().replace(/<a/g,'<a target="_blank"')+'<br />'+'</p></div><br style="clear: both;" /></div>';            
+	    	var tweet='<div class="tweet"><div class="tweet-left"><a target="_blank" href="http://twitter.com/'+this.from_user+'"><img width="48" height="48" alt="'+this.from_user+' on Twitter" src="'+this.profile_image_url+'" /></a></div><div class="tweet-right"><p class="text">'+this.text.delinkify().removeUsers().linktag().replace(/<a/g,'<a target="_blank"')+'<br />'+'</p></div><br style="clear: both;" /></div>';            
 			elem.append(tweet);
 	    });
 	}
 }
 
+// simple function to transform a tweet to a bag of words
+// TODO update this
+String.prototype.toBOW = function() {
+	return this.match(/w+/g);
+}
 
-String.prototype.linkuser=function(){
-    return this.replace(/[@]+[A-Za-z0-9-_]+/g,"");
-};
-
-String.prototype.linkify=function(){
+// remove links from a string
+String.prototype.delinkify=function(){
     return this.replace(/[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&;\?\/.=]+/g,"");
 };
 
-String.prototype.rt=function(){
-    return this.replace("RT: ","").replace("RT :","").replace("RT : ","");
+
+// remove users' names
+String.prototype.removeUsers=function(){
+    return this.replace(/[@]+[A-Za-z0-9-_]+/g,""); 
+};
+
+
+String.prototype.linktag=function(){
+    return this.replace(/[]+[A-Za-z0-9-_]+/,function(t){
+        return t;
+    });
 };
