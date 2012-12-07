@@ -30,13 +30,14 @@
     	</form>   
 	
 	    <script type="text/javascript">
+
         	$('input[type="text"]').keyup(function () {
             	$('#tweets').attr('title', $(this).val());
         	});
         	$('form').submit(function (event) {
             	event.preventDefault();
             	init( { keyword : $('input[type="text"]').val(), 
-            			num : 100, 
+            			num : 10, 
             			elem : $('#tweets') 
             		  }
             		);
