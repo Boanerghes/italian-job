@@ -48,19 +48,37 @@ String.prototype.toBOW = function() {
 }
 
 // remove links from a string
-String.prototype.delinkify=function(){
+String.prototype.delinkify = function(){
     return this.replace(/[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&;\?\/.=]+/g,"");
 };
 
 
 // remove users' names
-String.prototype.removeUsers=function(){
+String.prototype.removeUsers = function(){
     return this.replace(/[@]+[A-Za-z0-9-_]+/g,""); 
 };
 
 
-String.prototype.linktag=function(){
+String.prototype.linktag = function(){
     return this.replace(/[]+[A-Za-z0-9-_]+/,function(t){
         return t;
     });
 };
+
+
+// Looking for tweet's words in the BOW
+function inputInsideBOW(input, BOW) {
+	var output = new Array();
+	
+	for (var i = 0; i < input.length; i++) {
+		word = input[i];
+		
+		if (BOW[word])
+			output[i] = 1;
+		else
+			output[i] = 0;
+	} 
+	
+	return output;
+}
+
