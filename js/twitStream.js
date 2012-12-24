@@ -1,15 +1,37 @@
-function init(settings) {
-	var coll = new TweetCollection();
-	coll.fetch(settings.keyword, settings.num, 'it', function() { coll.displayTweets(settings.elem); });
+function initSVM() {
+	svm = new svmjs.SVM();
+	svm.fromJSON(svm_vars);
+	console.log("SVM initialized");
 }
 
+function evaluateAndDisplay (settings) {
+	var coll = new TweetCollection();
+	coll.fetch(settings.keyword, settings.num, 'en',  coll.displayWithSentiment(settings.elem));
+}
 
-// Class representing a collection of tweets. Empty when instantiated.
+TweetCollection.prototype.displayWithSentiment = function (elem){
+	return function (json) {
+		elem = $(elem);
+		
+		elem.html('');
+		$(json.results).each(function(){
+			var actualTweet = this.text.delinkify().removeUsers().removeHash().toLowerCase();
+			var res = BOW.getPresence(actualTweet.toBOW());
+			if (res.sum != 0){
+				var mood = (svm.predict([res.result]) == 1) ? "POSITIVE" : "NEGATIVE";
+				var tweet='<div class="tweet"><div class="tweet-left"><a target="_blank" href="http://twitter.com/'+this.from_user+'"><img width="48" height="48" alt="'+this.from_user+' on Twitter" src="'+this.profile_image_url+'" /></a></div><div class="tweet-right"><p class="text"> ['+mood + " (" + res.sum + ")] " + this.text.delinkify().removeUsers().removeHash().replace(/<a/g,'<a target="_blank"')+'<br />'+'</p></div><br style="clear: both;" /></div>';            
+				elem.append(tweet);
+			}
+		});
+	}
+}
+
+//Class representing a collection of tweets. Empty when instantiated.
 function TweetCollection () {
 	var tweets = '';
 }
 
-// Fetches tweets based on the provided parameters
+//Fetches tweets based on the provided parameters
 TweetCollection.prototype.fetch = function (keyword, num, lang, callback)
 { 	
 	var url= "http://search.twitter.com/search.json?q="+keyword+"&rpp="+num+"&callback=?"+"&lang=" + lang;
@@ -19,66 +41,128 @@ TweetCollection.prototype.fetch = function (keyword, num, lang, callback)
 	});
 }
 
-
-
-// Display the tweets stored in the object in the 'elem' DOM position.
-// TODO what does it happen if no tweets have been retrieved?!
+//Display the tweets stored in the object in the 'elem' DOM position.
+//TODO what does it happen if no tweets have been retrieved?!
 TweetCollection.prototype.displayTweets = function(elem) {
 	TweetCollection.displayTweets(elem)(tweets);
 }
 
-// A curried function getting a DOM position and returning a function that gets 
-// the json representation of a list of tweets and populate the DOM elemnt with them.
+//A curried function getting a DOM position and returning a function that gets 
+//the json representation of a list of tweets and populate the DOM elemnt with them.
 TweetCollection.displayTweets = function(elem){
 	return function(json) {
 		elem=$(elem);
-		
+
 		elem.html('');
-	    $(json.results).each(function(){
-	    	var tweet='<div class="tweet"><div class="tweet-left"><a target="_blank" href="http://twitter.com/'+this.from_user+'"><img width="48" height="48" alt="'+this.from_user+' on Twitter" src="'+this.profile_image_url+'" /></a></div><div class="tweet-right"><p class="text">'+this.text.delinkify().removeUsers().linktag().replace(/<a/g,'<a target="_blank"')+'<br />'+'</p></div><br style="clear: both;" /></div>';            
+		$(json.results).each(function(){
+			var tweet='<div class="tweet"><div class="tweet-left"><a target="_blank" href="http://twitter.com/'+this.from_user+'"><img width="48" height="48" alt="'+this.from_user+' on Twitter" src="'+this.profile_image_url+'" /></a></div><div class="tweet-right"><p class="text">'+this.text.delinkify().removeUsers().removeHash().replace(/<a/g,'<a target="_blank"')+'<br />'+'</p></div><br style="clear: both;" /></div>';            
 			elem.append(tweet);
-	    });
+		});
 	}
 }
 
-// simple function to transform a tweet to a bag of words
-// TODO update this
-String.prototype.toBOW = function() {
-	return this.match(/w+/g);
+// Transform a vector in a boolean presence array given an array of elements. The output array has the same 
+// length of the bag of elements, subject of this procedure, and each of its elements reflects the presence of that particular element
+// in the original vector.
+Array.prototype.getPresence = function(elements) {
+
+	var output=new Array();
+	var sum = 0;
+
+	for (var i=0; i<this.length; i++){
+		if (jQuery.inArray(this[i], elements) != -1){
+			output[i] = 1;
+		}
+		else {
+			output[i] = 0;
+		}
+		sum += output[i];
+	}
+	return {result: output, sum : sum}
 }
 
-// remove links from a string
+//simple function to transform a tweet to a bag of words
+//TODO update this
+String.prototype.toBOW = function() {
+	return this.match(/\w+/g);
+}
+
+//remove links from a string
 String.prototype.delinkify = function(){
-    return this.replace(/[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&;\?\/.=]+/g,"");
+	return this.replace(/[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&;\?\/.=]+/g,"");
 };
 
 
-// remove users' names
+//remove users' names
 String.prototype.removeUsers = function(){
-    return this.replace(/[@]+[A-Za-z0-9-_]+/g,""); 
+	return this.replace(/[@]+[A-Za-z0-9-_]+/g,""); 
 };
 
 
-String.prototype.linktag = function(){
-    return this.replace(/[]+[A-Za-z0-9-_]+/,function(t){
-        return t;
-    });
+String.prototype.removeHash = function(){
+	return this.replace(/[#]+[A-Za-z0-9-_]+/,function(t){
+		return t;
+	});
 };
 
 
-// Looking for tweet's words in the BOW
-function inputInsideBOW(input, BOW) {
+// Return the indexes of true boolean elements in an array.
+Array.prototype.findTrueIndexes = function() {
 	var output = new Array();
-	
-	for (var i = 0; i < input.length; i++) {
-		word = input[i];
-		
-		if (BOW[word])
-			output[i] = 1;
-		else
-			output[i] = 0;
-	} 
-	
+
+	for (var i=0; i< this.length; i++){
+		if (this[i] == 1)
+			output.push(i);
+	}
 	return output;
 }
 
+function setUpAndTest() {
+	posVector = new Array();
+	negVector = new Array();
+	var i = 0;
+
+	this.tweetsToVector = function(tweet_coll, array) {
+		$(tweet_coll.results).each( function(){ 
+			var actualTweet = this.text.delinkify().removeUsers().removeHash().toLowerCase();
+
+			var arr = actualTweet.toBOW();
+			var res = BOW.getPresence(arr);
+			if (res.sum != 0){ 
+				array.push(res.result);
+				console.log("PUSHED " + actualTweet + " " + res.result.findTrueIndexes());
+			} 
+			else console.log("REJECTED " + actualTweet);
+		});	
+	}
+
+	this.recursiveFetch = function(keyword, array, max) {
+		console.log("recursive call");
+		var coll = new TweetCollection();
+		coll.fetch(keyword, 100, "en", function(json){
+			tweetsToVector(json, array);
+			if (array.length < max){
+				recursiveFetch(keyword, array, max);
+			}
+			else i++;
+			if (i == 2) initializeSVM();
+		});
+	}
+
+	recursiveFetch(":) OR :D OR :-) OR (: OR (-:", posVector, 10);
+	recursiveFetch(":( OR ): OR :-( OR )-:", negVector, 10);
+
+	this.initializeSVM = function (){
+		console.log("initializing SVM");
+		data = posVector.concat(negVector);
+		labels = new Array();
+		for (var i = 0; i<posVector.length + negVector.length; i++){
+			labels[i] = (i < posVector.length) ? 1 : -1;
+		}
+		svm = new svmjs.SVM();
+		svm.train(data, labels, {C: 1.0});
+		
+		console.log(JSON.stringify(svm.toJSON()));
+	}
+
+}
