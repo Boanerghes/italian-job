@@ -1,13 +1,12 @@
 /* General 
 -------------------------------------- */
 body{
-	font-family: Verdana;
 	font-size: 12px;	
-	
+	font-family: 'Handlee', cursive;
 	background:
 	linear-gradient(135deg, #708090 22px, #d9ecff 22px, #d9ecff 24px, transparent 24px, transparent 67px, #d9ecff 67px, #d9ecff 69px, transparent 69px),
     linear-gradient(225deg, #708090 22px, #d9ecff 22px, #d9ecff 24px, transparent 24px, transparent 67px, #d9ecff 67px, #d9ecff 69px, transparent 69px)0 64px;
-	background-color:#708090;
+	background-color:#FFFFFF;
 	background-size: 64px 128px
 }
 
@@ -17,11 +16,9 @@ p{
 
 
 .title{
-	font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; 
-   	font-weight: 300;
-	
+	font-family: 'Handlee', cursive;	
 	text-align: center;  
-	font-size: 45px; 
+	font-size: 50px; 
 	height:55px;
 	margin-top: 40px;
 	margin-bottom: 80px; 
@@ -29,19 +26,27 @@ p{
 
 .introduction{
 	text-align: center;
-	height: 36px;
-	font-size: 14px;
-	margin-bottom: 10px;
+	height: 40px;
+	font-size: 18px;
+	margin-bottom: 7px;
 }
 
+
+/* Chart 
+-------------------------------------- */
+.chart{
+	margin-bottom: 10px;
+	width: 600px; 
+	height: 400px;
+}
 
 
 /* twitter stream 
 -------------------------------------- */
 .twitStream{
-	margin-top: 60px;
-	font-family: verdana;
-	font-size: 11px;
+	margin-top: 5px;
+	font-family: 'Ubuntu Condensed', sans-serif;
+	font-size: 17px;
 }
 .tweet{
 	display: block;
@@ -59,10 +64,29 @@ p{
 	margin: 0;
 	padding: 0;
 }
-.tweet-separator{
-height:1px;
-background:#717171;
-border-bottom:1px solid #313030;
+.tweet-right-positive {
+  border: 1px solid #eeeeee; 
+  margin: auto;
+  padding: 6px 10px 6px 10px;
+  
+  -moz-border-radius: 8px;  
+  -webkit-border-radius: 8px; 
+  
+  background-color: #EFC;
+  border-color: #C6DD97;
+  border-width: 2px;
+}
+.tweet-right-negative {
+  border: 1px solid #eeeeee; 
+  margin: auto;
+  padding: 6px 10px 6px 10px;
+  
+  -moz-border-radius: 8px;  
+  -webkit-border-radius: 8px; 
+  
+  background-color: #FFE0E0;
+  border-color: #FFC2C2;
+  border-width: 2px;
 }
 
 
@@ -90,6 +114,9 @@ border-bottom:1px solid #313030;
     background: rgba(0,0,0,.2);
     border-radius: 10px;
     box-shadow: 0 1px 1px rgba(0,0,0,.4) inset, 0 1px 0 rgba(255,255,255,.2);
+    
+    margin-bottom: 70px;
+    margin-top: 20px;
 }
  
 /* Form text input */
@@ -99,8 +126,7 @@ border-bottom:1px solid #313030;
     height: 20px;
     padding: 10px 5px;
     float: left;    
-    font: bold 15px 'lucida sans', 'trebuchet MS', 'Tahoma';
-    border: 0;
+	font-family: 'Libre Baskerville', serif;    border: 0;
     background: #eee;
     border-radius: 3px 0 0 3px;      
 }

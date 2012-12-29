@@ -15,6 +15,9 @@ TweetCollection.prototype.displayWithSentiment = function (elem){
 	return function (json) {
 		elem = $(elem);
 
+		var positive = 0;
+		var negative = 0;
+		
 		elem.html('');
 		$(json.results).each(function(){
 			var actualTweet = this.text.delinkify().removeUsers().removeHash().toLowerCase();
@@ -22,10 +25,21 @@ TweetCollection.prototype.displayWithSentiment = function (elem){
 			var res = BOW.getPresence(actualTweet.toBOW());
 			if (res.sum != 0){
 				var mood = (svm.predict([res.result]) == 1) ? "POSITIVE" : "NEGATIVE";
-				var tweet='<div class="tweet"><div class="tweet-left"><a target="_blank" href="http://twitter.com/'+this.from_user+'"><img width="48" height="48" alt="'+this.from_user+' on Twitter" src="'+this.profile_image_url+'" /></a></div><div class="tweet-right"><p class="text"> ['+mood + " (" + res.sum + ")] " + this.text.delinkify().removeUsers().removeHash().replace(/<a/g,'<a target="_blank"')+'<br />'+'</p></div><br style="clear: both;" /></div>';            
+				if (mood == "POSITIVE") {
+				    //var tweet='<div class="tweet"><div class="tweet-left"><a target="_blank" href="http://twitter.com/'+this.from_user+'"><img width="48" height="48" alt="'+this.from_user+' on Twitter" src="'+this.profile_image_url+'" /></a></div><div class="tweet-right-negative"><p class="text"> ['+mood + " (" + res.sum + ")] " +this.text.delinkify().removeUsers().removeHash().replace(/<a/g,'<a target="_blank"')+'<br />'+'</p></div><br style="clear: both;" /></div>';            
+					var tweet='<div class="tweet"><div class="tweet-left"><a target="_blank" href="http://twitter.com/'+this.from_user+'"><img width="48" height="48" alt="'+this.from_user+' on Twitter" src="'+this.profile_image_url+'" /></a></div><div class="tweet-right-positive"><p class="text"> '+ this.text.delinkify().removeUsers().removeHash().replace(/<a/g,'<a target="_blank"')+'<br />'+'</p></div><br style="clear: both;" /></div>';            
+					positive = positive + 1;
+				}
+				else {
+				    //var tweet='<div class="tweet"><div class="tweet-left"><a target="_blank" href="http://twitter.com/'+this.from_user+'"><img width="48" height="48" alt="'+this.from_user+' on Twitter" src="'+this.profile_image_url+'" /></a></div><div class="tweet-right-negative"><p class="text"> ['+mood + " (" + res.sum + ")] " +this.text.delinkify().removeUsers().removeHash().replace(/<a/g,'<a target="_blank"')+'<br />'+'</p></div><br style="clear: both;" /></div>';            
+					var tweet='<div class="tweet"><div class="tweet-left"><a target="_blank" href="http://twitter.com/'+this.from_user+'"><img width="48" height="48" alt="'+this.from_user+' on Twitter" src="'+this.profile_image_url+'" /></a></div><div class="tweet-right-negative"><p class="text"> '+ this.text.delinkify().removeUsers().removeHash().replace(/<a/g,'<a target="_blank"')+'<br />'+'</p></div><br style="clear: both;" /></div>';            
+					negative = negative + 1;
+				}
 				elem.append(tweet);
 			}
 		});
+		
+		drawVisualization(positive, negative);
 	}
 }
 
@@ -44,25 +58,6 @@ TweetCollection.prototype.fetch = function (keyword, num, lang, callback)
 	});
 }
 
-//Display the tweets stored in the object in the 'elem' DOM position.
-//TODO what does it happen if no tweets have been retrieved?!
-TweetCollection.prototype.displayTweets = function(elem) {
-	TweetCollection.displayTweets(elem)(tweets);
-}
-
-//A curried function getting a DOM position and returning a function that gets 
-//the json representation of a list of tweets and populate the DOM elemnt with them.
-TweetCollection.displayTweets = function(elem){
-	return function(json) {
-		elem=$(elem);
-
-		elem.html('');
-		$(json.results).each(function(){
-			var tweet='<div class="tweet"><div class="tweet-left"><a target="_blank" href="http://twitter.com/'+this.from_user+'"><img width="48" height="48" alt="'+this.from_user+' on Twitter" src="'+this.profile_image_url+'" /></a></div><div class="tweet-right"><p class="text">'+this.text.delinkify().removeUsers().removeHash().replace(/<a/g,'<a target="_blank"')+'<br />'+'</p></div><br style="clear: both;" /></div>';            
-			elem.append(tweet);
-		});
-	}
-}
 
 //Transform a vector in a boolean presence array given an array of elements. The output array has the same 
 //length of the bag of elements, subject of this procedure, and each of its elements reflects the presence of that particular element
@@ -256,3 +251,24 @@ function calculateRecurrence() {
 	recursiveFetch(":) OR :D OR :-) OR (: OR (-:", posTweets, 2000);
 	recursiveFetch(":( OR ): OR :-( OR )-:", negTweets, 2000);
 }
+
+
+// Draw a pie chart with results
+function drawVisualization(positive, negative) {
+        // Create and populate the data table.
+        var data = google.visualization.arrayToDataTable([
+          ['Sentiment', 'Number of related tweets'],
+          ['Positive', positive],
+          ['Negative', negative],
+        ]);
+        
+        var options = {'title':'Sentiments about the searched term are:',
+                        colors:['green','red']};
+      
+        // Create and draw the visualization.
+        new google.visualization.PieChart(document.getElementById('chart')).
+            draw(data, options);
+            
+        google.setOnLoadCallback(drawVisualization);
+}
+      
