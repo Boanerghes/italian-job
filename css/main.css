@@ -89,6 +89,19 @@ p{
   border-width: 2px;
 }
 
+.tweet-right-impossible {
+  border: 1px solid #7A7A52; 
+  margin: auto;
+  padding: 6px 10px 6px 10px;
+  
+  -moz-border-radius: 8px;  
+  -webkit-border-radius: 8px; 
+  
+  background-color: #F3F3EF;
+  border-color: #FFC2C2;
+  border-width: 2px;
+}
+
 
 /* search form 
 -------------------------------------- */

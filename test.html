@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+
+<html>	
+	<head>
+		<link href='http://fonts.googleapis.com/css?family=Handlee' rel='stylesheet' type='text/css'>
+		<link href='http://fonts.googleapis.com/css?family=Ubuntu+Condensed' rel='stylesheet' type='text/css'>
+		<link href='http://fonts.googleapis.com/css?family=Libre+Baskerville' rel='stylesheet' type='text/css'>
+
+		<title>Simple Twitter Sentiment Analyzer</title>
+
+
+		<!-- Javascript section-->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+	    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+		
+		<script type="text/javascript" src="lib/tweetStore.js"></script>
+		<script type="text/javascript" src="js/basicProto.js"></script>    
+		<script type="text/javascript" src="js/twitStream.js"></script>
+		<script type="text/javascript" src="lib/svm.js"></script>
+		
+		<script type="text/javascript" src="lib/BOW.js"></script>
+		<script type="text/javascript" src="lib/svm_vars.js"></script>
+		<script type="text/javascript" src="lib/BOW2.js"></script>
+		<script type="text/javascript" src="lib/svm_vars2.js"></script>
+
+		<!-- CSS section-->
+		<link rel="stylesheet" href="css/main.css" />
+
+	</head>
+	<body>
+		<div class="title">Simple Twitter Sentiment Analyzer</div>
+
+  		<div class="introduction">Discover the Twitter sentiment about:</div>
+ 		<form class="form-wrapper cf">
+        	<input type="text" id="input" autofocus placeholder="Insert a topic..." required>
+        	<button type="submit">Search</button>
+    	</form>
+	
+	    <script type="text/javascript">
+	    	initializeTest();
+        </script>
+        <div class="twitStream 1000" id="tweets"></div>
+
+	</body>
+
+</html>
