@@ -1,17 +1,22 @@
-function initSVM() {
+function initSVM(num) {
 	svm = new svmjs.SVM();
-	svm.fromJSON(svm_vars);
-	console.log("SVM initialized");
+	svm.fromJSON(svm_args[num]);
+	bow = bow_args[num];
+	
+	console.log("SVM initialized - " + num);
 }
 
 //main function called when clicking the search button
 function evaluateAndDisplay (settings) {
 	var coll = new TweetCollection();
-	coll.fetch(settings.keyword, settings.num, 'en',  coll.displayWithSentiment(settings.elem));
+	settings.elem.html('');
+	
+	coll.fetchVectors(settings.keyword, settings.num, 'en',  function() { settings.elem.html('<div id="chart"></div>'); coll.displayWithSentiment(settings.elem, true)(); });
+	settings.elem.html("<center id><h2>I'm fetching a bit more than 100 tweets just for you!<BR />Please wait a moment...</h2></center>");
 }
 
 //return a function that gets a json representation of tweets and prints them nicely in the element 'elem'
-TweetCollection.prototype.displayWithSentiment = function (elem){
+TweetCollection.prototype.displayWithSentiment = function (elem, display_graphs){
 	var self = this;
 	return function () {
 		elem = $(elem);
@@ -19,11 +24,10 @@ TweetCollection.prototype.displayWithSentiment = function (elem){
 		var positive = 0;
 		var negative = 0;
 
-		elem.html('');
 		$(self.tc).each(function(){
 			var actualTweet = this.text.delinkify().removeUsers().removeHash().toLowerCase();
 			// create boolean vector and print result
-			var res = BOW.getPresence(actualTweet.toBOW());
+			var res = bow.getPresence(actualTweet.toBOW());
 			if (res.sum != 0){
 				var mood = (svm.predict([res.result]) == 1) ? "POSITIVE" : "NEGATIVE";
 				if (mood == "POSITIVE") {
@@ -31,18 +35,14 @@ TweetCollection.prototype.displayWithSentiment = function (elem){
 					positive = positive + 1;
 				}
 				else {
-					var tweet='<div class="tweet"><div class="tweet-left"><a target="_blank" href="http://twitter.com/'+this.from_user+'"><img width="48" height="48" alt="'+this.from_user+' on Twitter" src="'+this.profile_image_url+'" /></a></div><div class="tweet-right-negative"><p class="text"> '+ this.text.removeUsers().replace(/<a/g,'<a target="_blank"')+'<br />'+'</p></div><br style="clear: both;" /></div>';            
+					var tweet='<div class="tweet"><div class="tweet-left"><a target="_blank" href="http://twitter.com/'+this.from_user+'"><img width="48" height="48" alt="'+this.from_user+' on Twitter" src="'+this.profile_image_url+'" /></a></div><div class="tweet-right-negative"><p class="text"> '+ this.text.removeUsers().replace(/<a/g,'<a  target="_blank"')+'<br />'+'</p></div><br style="clear: both;" /></div>';            
 					negative = negative + 1;
 				}
 				elem.append(tweet);
 			}
-			else {
-				var tweet='<div class="tweet"><div class="tweet-left"><a target="_blank" href="http://twitter.com/'+this.from_user+'"><img width="48" height="48" alt="'+this.from_user+' on Twitter" src="'+this.profile_image_url+'" /></a></div><div class="tweet-right-impossible"><p class="text"> '+ this.text.removeUsers().replace(/<a/g,'<a target="_blank"')+'<br />'+'</p></div><br style="clear: both;" /></div>';            
-				elem.append()
-			}
 		});
 
-		drawVisualization(positive, negative);
+		if (display_graphs) drawVisualization(positive, negative);
 	}
 }
 
@@ -68,18 +68,30 @@ TweetCollection.prototype.toJSON = function(json) {
  * See Twitter documentation for details about how to deal with next_page and max_id parameters.
  * https://dev.twitter.com/docs/api/1.1/get/search/tweets
  */
-TweetCollection.prototype.fetch = function (keyword, num, lang, callback)
+TweetCollection.prototype.fetch = function (keyword, num, lang, callback, start_id)
 { 	var self = this;
+	var res_maxId;
+	keyword = keyword + " -RT";
 	
 	var recursiveTweetFetch = function(url, callback) {
 		// retrieve tweets recursively as needed
 		$.getJSON(url, function(json){
 			
-			for (var i=0; (i<json.results.length) && (self.tc.length<num) ; i++){ 
-				self.tc.push(json.results[i]); 
-				}
-			var newMaxId = json.results[json.results.length-1].id;	// used in case next_page is not included in the response		
+			if (! json.hasOwnProperty('error')){
 			
+			for (var i=0; (i<json.results.length) && (self.tc.length<num) ; i++){
+				var present = false;
+				for (var j=0; j<self.tc.length; j++) {
+					if (self.tc[j].text === json.results[i].text) present = true;
+				}
+				if (!present) self.tc.push(json.results[i]);
+			}
+			var newMaxId = json.results[json.results.length-1].id;	// used in case next_page is not included in the response	
+			res_maxId = newMaxId;
+			}
+			else {
+				newMaxId = res_maxId;
+			}
 			if (self.tc.length < num){
 				if (typeof json.next_page === 'undefined'){
 					var url = "http://search.twitter.com/search.json?q=" + keyword + "&rpp=100&callback=?&lang=" + lang + "&max_id=" + newMaxId;
@@ -95,10 +107,36 @@ TweetCollection.prototype.fetch = function (keyword, num, lang, callback)
 		});
 	}
 
-	var url= "http://search.twitter.com/search.json?q="+keyword+"&rpp=100&callback=?&lang=" + lang;
+	var url= "http://search.twitter.com/search.json?q="+keyword+"&rpp=100&callback=?&lang=" + lang + ((typeof start_id != 'undefined') ? "&max_id=" + start_id : "");
 	console.log("trying for " + url);
 	recursiveTweetFetch(url, callback);
 }
+
+TweetCollection.prototype.fetchVectors = function (keyword, num, lang, callback){
+	var length = 0;
+	var valids = 0;
+	var self = this;
+	
+	recVectorFetch = function () {
+		return function() {
+		console.log ("length: " + length + ", tc.length: " + self.tc.length + ", num: " + num + ", valids" + valids);
+			for (var i = length; i< self.tc.length; i++){
+				var vec = bow.getPresence(self.tc[i].text.toBOW());
+				if (vec.sum != 0){
+					valids++;
+					self.tc[i].vector = vec;
+				}
+			}
+			length = self.tc.length;
+			last_id = self.tc[self.tc.length-1].id;
+			if (valids < num) self.fetch(keyword, self.tc.length + 100, lang, recVectorFetch(), last_id);
+			else callback();
+		}
+	}
+	
+	this.fetch(keyword, num, lang, recVectorFetch());
+}
+
 
 //Draw a pie chart with results
 function drawVisualization(positive, negative) {
@@ -117,4 +155,18 @@ function drawVisualization(positive, negative) {
 	draw(data, options);
 
 	google.setOnLoadCallback(drawVisualization);
+}
+
+function setUpTest(elem, svm_num) {
+	initSVM(svm_num);
+	
+	for (obj in tweetStore){
+		if (tweetStore.hasOwnProperty(obj)){
+		
+			elem.append("<center><h3>" + obj + "</h3></center>" + "<BR />");
+			var coll = new TweetCollection();
+			coll.fromJSON(tweetStore[obj]);
+			coll.displayWithSentiment(elem, false)();
+		}
+	}
 }

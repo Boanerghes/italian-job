@@ -20,8 +20,9 @@
 		<script type="text/javascript" src="js/svmTraining.js"></script>
 		<script type="text/javascript" src="lib/svm.js"></script>
 		
-		<script type="text/javascript" src="lib/BOW2.js"></script>
-		<script type="text/javascript" src="lib/svm_vars2.js"></script>
+		<script type="text/javascript" src="lib/BOW.js"></script>
+		<script type="text/javascript" src="lib/ARGS.js"></script>
+
 
 		<!-- CSS section-->
 		<link rel="stylesheet" href="css/main.css" />
@@ -30,14 +31,35 @@
 	<body>
 		<div class="title">Simple Twitter Sentiment Analyzer</div>
 
-  		<div class="introduction">Discover the Twitter sentiment about:</div>
+  		<div class="introduction">
+			<a href='#' id="showOptions">Show obscure options</a>
+			<BR>Discover the Twitter sentiment about:</div>
  		<form class="form-wrapper cf">
         	<input type="text" id="input" autofocus placeholder="Insert a topic..." required>
         	<button type="submit">Search</button>
     	</form>
 	
 	    <script type="text/javascript">
-	    	initSVM();
+			var opt = "<a href='#' id ='opt[1]'>Imported Bag Of Words</a> | <a href=# id ='opt[2]'>Simple Relevance</a> | <a href=# id ='opt[3]''>Alternate Relevance</a></span>"
+			$('#showOptions').click(function(event) { 
+				$('#showOptions').replaceWith(opt);
+				$('#opt\\[3\\]').css('font-weight', 'bold');
+
+				for (var i=1; i<= 3; i++){
+				$('#opt\\[' + i + '\\]').click( 
+					function(index) { 
+						return function (event) {
+							console.log(index);
+							initSVM(index);
+							$('#opt\\[' + index + '\\]').css('font-weight', 'bold');
+							for (var j=1; j<= 3; j++){ if (index != j) {  $('#opt\\[' + j + '\\]').css('font-weight', 'normal');} }
+						}
+					}(i)
+				);
+			}
+			});
+										
+	    	initSVM(3);
         	$('form').submit(function (event) {
             	event.preventDefault();
             	evaluateAndDisplay( 
@@ -45,11 +67,9 @@
             			num : 100, 
             			elem : $('#tweets') 
             		 });
-            	drawVisualization();
         	});
         </script>
         
-        <div id="chart"></div>
         <div class="twitStream 1000" id="tweets"></div>
 
 	</body>

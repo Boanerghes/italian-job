@@ -1,33 +1,38 @@
-//various methods for training the SVM
+// mp 1/2013
+// various methods for training the SVM
+// not very clean, should be refactored
 
-function simpleBowTrain() {
-	var posVector = new Array();
-	var negVector = new Array();
-	var i = 0;
 
-	var tweetsToVector = function(tweet_coll, array) {
+/**
+ *  Uses a huge predefined BOW (the first in the list) and train the requested number of positive and
+ *  negative tweets processed using it.
+ */
+function simpleBowTrain(test_size) {
+	// transform a collection of tweets in a collection of boolean arrays
+	var tweetsToVector = function(tweet_coll, destArray, bow) {
 		$(tweet_coll).each( function(){ 
 			var actualTweet = this.text.delinkify().removeUsers().removeHash().toLowerCase();
 			var arr = actualTweet.toBOW();
-			var res = BOW.getPresence(arr);
+			var res = bow.getPresence(arr);
 			if (res.sum != 0){ 
-				array.push(res.result);
+				destArray.push(res.result);
 			} 
 		});	
 	}
-
-	var recursiveFetch = function(keyword, array, max) {
+	
+	/**
+	 *  Fetches the requested tweets, converts them to vectors
+	 *  according to the proper BOW and train the SVM.
+	 */
+	var smartFetch = function(keyword, array, max) {
 		var coll = new TweetCollection();
 		coll.fetch(keyword, max, "en", function(json){
-			tweetsToVector(coll.tc, array);
+			tweetsToVector(coll.tc, array, bow_args[1]);
 
 			i++;
 			if (i == 2) initializeSVM();
 		});
 	}
-
-	recursiveFetch(":) OR :D OR :-) OR (: OR (-:", posVector, 2500);
-	recursiveFetch(":( OR ): OR :-( OR )-:", negVector, 2500);
 
 	var initializeSVM = function (){
 		console.log("initializing SVM");
@@ -41,12 +46,24 @@ function simpleBowTrain() {
 
 		console.log(JSON.stringify(svm.toJSON()));
 	}
+	
+	posVector = new Array();
+	negVector = new Array();
+	var i = 0; // utility flag -- TODO change this to something more smart
+	
+	smartFetch(":) OR :D OR :-) OR (: OR (-:", posVector, test_size);
+	smartFetch(":( OR ): OR :-( OR )-:", negVector, test_size);
 }
 
-
-function recurrenceTrain() {
-	this.tweetsToWordsCount = function(tweet_coll, destArray) {
-		$(tweet_coll).each( function(){ 
+/**
+ *  Retrieves the requested number of tweets, calculates the most relevant words
+ *  summing up the overall occurrences (summing both from negative and positive).
+ *  Created a BOW usign the 200 most relevant words and train the SVM with tweets 
+ *  processed using this bag.
+ */
+function recurrenceTrain(test_size, bow_size) {
+	var tweetsToWordsCount = function(tweet_coll, destArray) {
+		$(tweet_coll).each( function(){
 
 			var actualTweet = this.text.delinkify().removeUsers().toLowerCase();
 			destArray.push(actualTweet);
@@ -54,18 +71,19 @@ function recurrenceTrain() {
 			var arr = actualTweet.toBOW();
 			for ( var i =0; i<arr.length; i++) {
 				var token = arr[i];
-				if (words[token] == undefined) { words[token] = 1; }
-				else { words[token] ++; }
+				if (token.length > 1) {
+					if (words[token] == undefined) { words[token] = 1; }
+					else  words[token]++;
+				}
 			}
 		});	
 	}
 
-	exec = false;
-	this.recursiveFetch = function(keyword, destArray, max) {
+	var exec = false;
+	this.smartFetch = function(keyword, destArray, max) {
 		var coll = new TweetCollection();
 		coll.fetch(keyword, max, "en", function(json){
 			tweetsToWordsCount(coll.tc, destArray);
-
 			if (!exec){ exec = true;}
 			else if (exec) {
 				console.log("gone");
@@ -76,8 +94,8 @@ function recurrenceTrain() {
 	}
 
 	this.trainSVM = function () {
+		// sort words
 		var sortable = [];
-
 		for (token in words) {
 			if (words.hasOwnProperty(token)){
 				sortable.push([token, words[token]]);
@@ -87,16 +105,16 @@ function recurrenceTrain() {
 			return b[1] - a[1];
 		});
 
-		newBOW = [];
-		// update here for bigger BOW
-		for (var i=0; i<200; i++) {
+		var newBOW = [];
+		// only take the top words
+		for (var i=0; i<bow_size; i++) {
 			newBOW.push(sortable[i][0]);
 		}
 
-		svm = new svmjs.SVM();
+		var svm = new svmjs.SVM();
 		labels = [];
 		vectors = [];
-		j = 0;
+		var j = 0;
 
 		for (var i=0; i<posTweets.length; i++){
 			var vec = newBOW.getPresence(posTweets[i].toBOW());
@@ -112,24 +130,23 @@ function recurrenceTrain() {
 				labels[j++] = -1;		
 			}
 		}
-		console.log(j);
 		svm.train(vectors, labels, {C: 1.0});
 		console.log(JSON.stringify(svm.toJSON()));
+		console.log(JSON.stringify(newBOW));
 	}
 
 	var words = new Array();
-	posTweets = [];
-	negTweets = [];
+	posTweets = new Array();
+	negTweets = new Array();
 
-	recursiveFetch(":) OR :D OR :-) OR (: OR (-:", posTweets, 2000);
-	recursiveFetch(":( OR ): OR :-( OR )-:", negTweets, 2000);
+	smartFetch(":) OR :D OR :-) OR (: OR (-:", posTweets, test_size);
+	smartFetch(":( OR ): OR :-( OR )-:", negTweets, test_size);
 }
 
 
-function advancedRecurrenceTrain() {
+function advancedRecurrenceTrain(test_size, bow_size) {
 
 	var tweetsToWordsCount = function(tweet_coll, destArray, countDest) {
-
 		$(tweet_coll).each( function(){ // for each tweet 
 			var actualTweet = this.text.delinkify().removeUsers().toLowerCase();
 			var arr = actualTweet.toBOW();
@@ -174,8 +191,7 @@ function advancedRecurrenceTrain() {
 		});
 
 		var newBOW = [];
-		// update here for bigger BOW
-		for (var i=0; i<200; i++) {
+		for (var i=0; i<bow_size; i++) {
 			newBOW.push(sortable[i][0]);
 			//console.log(sortable[i][1] + " " + sortable[i][0]);
 		}
@@ -217,7 +233,7 @@ function advancedRecurrenceTrain() {
 		for (elem in neg_words) {
 			if (neg_words.hasOwnProperty(elem)){
 				if (final_words.hasOwnProperty(elem)){
-					if ((final_words[elem] >= neg_words[elem] && final_words[elem]/10 < neg_words[elem]) || (final_words[elem] < neg_words[elem] && neg_words[elem]/10 < final_words[elem]) ){
+					if ((final_words[elem] >= neg_words[elem] && final_words[elem]/10 < neg_words[elem]) || (final_words[elem] < neg_words[elem] && neg_words[elem]/10 < final_words[elem])){
 						delete final_words[elem];
 					}
 					else final_words[elem] += neg_words[elem];
@@ -234,7 +250,7 @@ function advancedRecurrenceTrain() {
 	var posTweets = [];
 	var negTweets = [];
 
-	smartFetch(":) OR :D OR :-) OR (: OR (-:", posTweets, pos_words, 1000);
-	smartFetch(":( OR ): OR :-( OR )-:", negTweets, neg_words, 1000);
+	smartFetch(":) OR :D OR :-) OR (: OR (-:", posTweets, pos_words, test_size);
+	smartFetch(":( OR ): OR :-( OR )-:", negTweets, neg_words, test_size);
 
 }
