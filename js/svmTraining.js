@@ -130,6 +130,9 @@ function recurrenceTrain(test_size, bow_size) {
 				labels[j++] = -1;		
 			}
 		}
+		
+		console.log(j);
+		
 		svm.train(vectors, labels, {C: 1.0});
 		console.log(JSON.stringify(svm.toJSON()));
 		console.log(JSON.stringify(newBOW));
