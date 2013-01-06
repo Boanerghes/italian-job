@@ -158,6 +158,7 @@ function drawVisualization(positive, negative) {
 }
 
 function setUpTest(elem, svm_num) {
+	elem.html('');
 	initSVM(svm_num);
 	
 	for (obj in tweetStore){

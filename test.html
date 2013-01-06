@@ -27,11 +27,21 @@
 
 	</head>
 	<body>
-		<div class="title">Simple Twitter Sentiment Analyzer</div>
+		<div class="introduction"><a href='#' id ='opt[1]'>Imported Bag Of Words</a> | <a href=# id ='opt[2]'>Simple Relevance</a> | <a href=# id ='opt[3]'>Alternate Relevance</a></div>
 	
         <div class="twitStream 1000" id="tweets"></div>
 <script type="text/javascript">
-	    	setUpTest($("#tweets"), 3);
+				for (var i=1; i<= 3; i++){
+					$('#opt\\[' + i + '\\]').click( 
+						function(index) { 
+							return function (event) {
+								setUpTest($("#tweets"), index);
+								$('#opt\\[' + index + '\\]').css('font-weight', 'bold');
+								for (var j=1; j<= 3; j++){ if (index != j) {  $('#opt\\[' + j + '\\]').css('font-weight', 'normal');} }
+							}
+						}(i)
+					);
+				}
         </script>
 	</body>
 
