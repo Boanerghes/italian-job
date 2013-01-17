@@ -1,1 +1,5 @@
-A simple twitter sentiment analysis tool for Italian politics.
+A simple twitter sentiment analysis tool.
+
+index.html is the main page, providing a search box for getting evaluated results on a particular keyword.
+test.html can be used for training the SVM, but configuration files have to be updated manually with the results from the console output.
+
